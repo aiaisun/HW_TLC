@@ -30,16 +30,24 @@ def total(string):
 #找到位置
 def parse_net(string):
     # locationRex = re.compile(r"([U|R|C|L|J]\d+.[A-Z]*\d*|VIA\(T\)|VIA\s)")
-    locationRex = re.compile(r"([U|R|C|L|J][A-Z]+\d+\.[A-Z]*\d*|[U|R|C|L|J][A-Z]+\.[A-Z]*\d*|[U|R|C|L|J]\d+.[A-Z]*\d*|[U|R|C|L|J][A-Z]*\d+.[A-Z]*\d*|VIA\(T\)|VIA\s)")
+    locationRex = re.compile(r"([U|R|C|L|J|T|P][A-Z]+\d+\.[A-Z]*\d*|[U|R|C|L|J|T|P][A-Z]+\.[A-Z]*\d*|[U|R|C|L|J|T|P|Q]\d+\.[A-Z]*\d*|[U|R|C|L|J|T|P][A-Z]*\d+\.[A-Z]*\d*|VIA\(T\)|VIA\s)")
     location = locationRex.findall(string)
     if location and location[0] == "VIA ":
         location[0] = location[0].replace(" ", "")
     return location
 
+# #找到單一段長度
+# def sub_length(string):
+#     lengthRex = re.compile(r"(\d+.\d+)")
+#     length = lengthRex.findall(string)[-1]
+#     return length 
+
 #找到單一段長度
 def sub_length(string):
-    lengthRex = re.compile(r"(\d+.\d+)")
-    length = lengthRex.findall(string)[-1]
+    lengthRex = re.compile(r"(\d+\.\d+)")
+    length = lengthRex.findall(string)
+    if length:
+        length = length[-1]
     return length 
 
 # 找到層數
@@ -78,7 +86,6 @@ def branchPathNum(df):
 
 
 #step1: 開啟檔案
-# filepath = r"0323.txt"
 filepath = args["file"]
 f = open_brd_file(filepath)
 print(f"step1: {filepath} open.")
@@ -99,7 +106,7 @@ for i in f:
     #如果是net name
     if parse_net_name(i):
         data = {} #清空
-        netName = i
+        netName = i.replace(" ", "")
         #建立netnamelist
         netNameList.append(netName)
         netPath = ""
@@ -108,17 +115,18 @@ for i in f:
 #         print(data)
     
     #如果是location
-    elif parse_net(i):
-        data = {} #清空
-        
-        location = parse_net(i)[0]
+#     elif parse_net(i):
+#         data = {} #清空
 
-        length = float(sub_length(i))
-        layer = layer_num(i)[0] if layer_num(i) else ""
-        data.update({"net_name" : netName, "location" : location, "length": length, "layer": layer})
-#         print(data)
-        SQS.append(data)
-        
+    elif parse_net(i):
+        data = {} #清空            
+        if sub_length(i):
+            location = parse_net(i)[0]
+            
+            length = float(sub_length(i))
+            layer = layer_num(i)[0] if layer_num(i) else ""
+            data.update({"net_name" : netName, "location" : location, "length": length, "layer": layer})
+            SQS.append(data)   
     
     #如果是total那一行
     elif total(i):
@@ -182,8 +190,7 @@ for i in netNameList:
         pathIdx = []
         pathIdx.append(indexList.index(connIdxList[idx]))
         pathIdx.append(indexList.index(connIdxList[idx + 1]))
-        
-        
+              
         #抓出兩兩conn
         connector = ""
         for j in pathIdx:
@@ -223,15 +230,12 @@ final = {
     "length" :column2
 }
 #轉成df 順便去掉空值
-dfFinal = pd.DataFrame(final).dropna(axis=0)     
-
+dfFinal = pd.DataFrame(final).dropna(axis=0)  
+   
 # step3: 儲存檔案
 filename = re.findall(r"^\w*", filepath)[0]
 write = pd.ExcelWriter(f'{filename}.xlsx')
 save_excel(write, dfFinal, "final")
-# save_excel(write, dfsummary, "summary")
-# save_excel(write, dfSQS, "data base")
-# save_excel(write, dfSQSR, "SQS")
 write.save()
 
 print(f"step3: {filename}.xlsx saved.")
