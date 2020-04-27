@@ -50,9 +50,10 @@ def sub_length(string):
         length = length[-1]
     return length 
 
+
 # 找到層數
 def layer_num(string):
-    layerRex = re.compile(r"BOTTOM|TOP|L\d+$")
+    layerRex = re.compile(r"BOTTOM|TOP|L\d+$|IN\d+$")
     layer = layerRex.findall(string)
     return layer
 
@@ -170,8 +171,9 @@ for i in netNameList:
     indexList = dfSQSR[dfSQSR["net_name"] == f"{i}"].index.tolist()
     path = ""
     connIdxList = []
-    
+  
     for idx in indexList:
+       
         if not re.findall("VIA", dfSQSR.loc[idx, "location"]): #找出connnector index 排出VIA, VIA(T)
             connIdxList.append(idx)
 
@@ -184,6 +186,8 @@ for i in netNameList:
     #把起始點&終點 加入summary
     start_end = f"{dfSQSR.loc[indexList[0], 'location']}:{dfSQSR.loc[indexList[-1], 'location']}"
     dfsummary.loc[netIndex, "start_end_path"] = start_end
+
+    
 
     for idx in range(length - 1):
         num +=1 
@@ -216,8 +220,11 @@ column2 = []
 for row in range(dfsummary.shape[0]):
     column1.append(dfsummary.loc[row,"net_name"])
     column1.append(dfsummary.loc[row,"start_end_path"])
+
+
     column2.append("")
     column2.append(dfsummary.loc[row,"total_length"])
+
 
 
     for num in range(branchPathNum(dfsummary)):
@@ -235,6 +242,7 @@ dfFinal = pd.DataFrame(final).dropna(axis=0)
 # step3: 儲存檔案
 filename = re.findall(r"^\w*", filepath)[0]
 write = pd.ExcelWriter(f'{filename}.xlsx')
+
 save_excel(write, dfFinal, "final")
 write.save()
 
