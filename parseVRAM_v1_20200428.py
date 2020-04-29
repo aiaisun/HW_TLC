@@ -1,7 +1,13 @@
 import re
 import pandas as pd
+import argparse
 from openpyxl import load_workbook
 pd.options.display.max_rows = None
+
+#讀入相關的參數
+ap = argparse.ArgumentParser()
+ap.add_argument("-f", "--file", required=True, help="Path to the txt of the braod file.")
+args = vars(ap.parse_args())
 
 # 開啟檔案
 def open_brd_file(filepath):
@@ -72,9 +78,8 @@ def branchPathNum(df):
     maxPathNum = int((df.shape[1] - 7) / 2)
     return maxPathNum
 
-
 #step1: 開啟檔案
-filepath = r"0424.txt"
+filepath = args["file"]
 f = open_brd_file(filepath)
 print(f"step1: {filepath} open.")
 
@@ -232,6 +237,12 @@ dfsummary.insert(1, startEndColumn.name, startEndColumn)
 #轉成final SQS資料
 column1 = []
 column2 = []
+
+#表格2的columns
+column3 = []
+column4 = []
+column5 = []
+
 for row in range(dfsummary.shape[0]):
     column1.append(dfsummary.loc[row,"net_name"])
 #     column1.append(dfsummary.loc[row,"start_end_path"])
@@ -242,9 +253,17 @@ for row in range(dfsummary.shape[0]):
 #     column2.append(dfsummary.loc[row,"total_length"])
     column2.append(dfsummary.loc[row,"length_MS"])
     column2.append(dfsummary.loc[row,"length_SL"])
+
+    #append到表格2的
+    column3.append(dfsummary.loc[row,"net_name"])
+    column3.append(dfsummary.loc[row,"net_name"])
     
-
-
+    column4.append(dfsummary.loc[row,"path_MS"])
+    column4.append(dfsummary.loc[row,"path_SL"])
+    
+    column5.append(dfsummary.loc[row,"length_MS"])
+    column5.append(dfsummary.loc[row,"length_SL"])
+    
     for num in range(branchPathNum(dfsummary)):
 
         column1.append(dfsummary.loc[row,f"path{num + 1}"])
@@ -254,14 +273,21 @@ final = {
     "SQS"    : column1,
     "length" :column2
 }
+
+final2 = {
+    "netname" : column3,
+    "SQS"     : column4,
+    "length"  : column5
+}
 #轉成df 順便去掉空值
 dfFinal = pd.DataFrame(final).dropna(axis=0)        
-    
+dfFinal2 = pd.DataFrame(final2).dropna(axis=0)     
     
 # step3: 儲存檔案
 filename = re.findall(r"^\w*", filepath)[0]
 write = pd.ExcelWriter(f'{filename}.xlsx')
 save_excel(write, dfFinal, "final")
+save_excel(write, dfFinal2, "final2")
 write.save()
 
 print(f"step3: {filename}.xlsx saved.")
