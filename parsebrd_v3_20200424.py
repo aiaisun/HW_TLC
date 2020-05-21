@@ -210,6 +210,7 @@ for i in netNameList:
 
         dfsummary.loc[netIndex, f"length{num}"] = branchLen
 
+
 #調整dfsummary的順序
 startEndColumn = dfsummary.pop(dfsummary.columns[2])
 dfsummary.insert(1, startEndColumn.name, startEndColumn)  

@@ -29,6 +29,13 @@ def deleteRow2(string):
     pattern = re.compile(r"^\-$")
     delete = pattern.findall(string)
     return delete
+
+#找到D開頭
+def findD(string):
+    pattern = re.compile(r"^D")
+    locationD = pattern.findall(string)
+    return locationD
+
     # 存excel
 def save_excel(write, df, sheetName):
 #     df = pd.DataFrame(datalist)
@@ -84,13 +91,16 @@ for i in rawData:
     elif i[-1] == "0.000": #找到location
 
         data = {} #清空 
-        try:
-            location, length = i[0], float(i[-1])
-            data.update({"net_name" : netName, "location" : location, "length": length, "layer": ""})
-        except:
-            print(netName," has error.")
-        
-        SQS.append(data)
+
+        D = findD(i[0])
+        if not D:
+            try:
+                location, length = i[0].replace("*", ""), float(i[-1])
+                data.update({"net_name" : netName, "location" : location, "length": length, "layer": ""})
+            except:
+                print(netName," has error.")
+            
+            SQS.append(data)
     elif i[-1] == "mils": #找到TOTAL
         data = {} #清空
         ttlLength = float(i[3])
@@ -99,13 +109,16 @@ for i in rawData:
         
     else:
         data = {} #清空 
-        try:
-            location, length, layer = i[0], float(i[-2]), i[-1]
-            data.update({"net_name" : netName, "location" : location, "length": length, "layer": layer})
-        except:
-            print(netName, "has error.")
 
-        SQS.append(data)
+        D = findD(i[0])
+        if not D:
+            try:
+                location, length, layer = i[0].replace("*", ""), float(i[-2]), i[-1]
+                data.update({"net_name" : netName, "location" : location, "length": length, "layer": layer})
+            except:
+                print(netName, "has error.")
+
+            SQS.append(data)
 
 #存取df
 dfsummary, dfSQS, dfSQSR = pd.DataFrame(summary), pd.DataFrame(SQS), pd.DataFrame(SQS)
@@ -157,17 +170,17 @@ for i in netNameList:
     for idx in indexList:
         ####################################################  前面的表層裡層    
 
-        try:
-            if re.findall("BOTTOM|TOP", dfSQSR.loc[idx, "layer"]): 
-                MS += dfSQSR.loc[idx, "gap"]
+        # try:
+        #     if re.findall("BOTTOM|TOP", dfSQSR.loc[idx, "layer"]): 
+        #         MS += dfSQSR.loc[idx, "gap"]
 
-            elif re.findall("L\d+$|IN\d+$", dfSQSR.loc[idx, "layer"]):
-                SL += dfSQSR.loc[idx, "gap"]
+        #     elif re.findall("L\d+$|IN\d+$", dfSQSR.loc[idx, "layer"]):
+        #         SL += dfSQSR.loc[idx, "gap"]
 
-            else:
-                NAN += dfSQSR.loc[idx, "gap"]
-        except:
-            print(f"idx:{idx} is wrong.")
+        #     else:
+        #         NAN += dfSQSR.loc[idx, "gap"]
+        # except:
+        #     print(f"idx:{idx} is wrong.")
              
 
         ########################################################
@@ -185,10 +198,10 @@ for i in netNameList:
     dfsummary.loc[netIndex, "start_end_path"] = start_end
     
     ####################在這裡加入表層裡層
-    dfsummary.loc[netIndex, "path_MS"] = start_end + "-MS"
-    dfsummary.loc[netIndex, "length_MS"] = MS
-    dfsummary.loc[netIndex, "path_SL"] = start_end + "-SL"
-    dfsummary.loc[netIndex, "length_SL"] = SL
+    # dfsummary.loc[netIndex, "path_MS"] = start_end + "-MS"
+    # dfsummary.loc[netIndex, "length_MS"] = MS
+    # dfsummary.loc[netIndex, "path_SL"] = start_end + "-SL"
+    # dfsummary.loc[netIndex, "length_SL"] = SL
     
     
     for idx in range(length - 1):
@@ -224,13 +237,13 @@ column2 = []
 for row in range(dfsummary.shape[0]):
     column1.append(dfsummary.loc[row,"net_name"])
     column1.append(dfsummary.loc[row,"start_end_path"])
-    column1.append(dfsummary.loc[row,"path_MS"])
-    column1.append(dfsummary.loc[row,"path_SL"])
+    # column1.append(dfsummary.loc[row,"path_MS"])
+    # column1.append(dfsummary.loc[row,"path_SL"])
     
     column2.append("")
     column2.append(dfsummary.loc[row,"total_length"])
-    column2.append(dfsummary.loc[row,"length_MS"])
-    column2.append(dfsummary.loc[row,"length_SL"])
+    # column2.append(dfsummary.loc[row,"length_MS"])
+    # column2.append(dfsummary.loc[row,"length_SL"])
     
 
     for num in range(branchPathNum(dfsummary)):

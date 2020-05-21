@@ -1,13 +1,13 @@
 import re
 import pandas as pd
+from openpyxl import load_workbook
 import argparse
+pd.options.display.max_rows = None
 
 #讀入相關的參數
 ap = argparse.ArgumentParser()
 ap.add_argument("-f", "--file", required=True, help="Path to the txt of the braod file.")
 args = vars(ap.parse_args())
-
-
 
 # 開啟檔案
 def open_brd_file(filepath):
@@ -86,14 +86,16 @@ def branchPathNum(df):
     return maxPathNum
 
 
+#CODE#########
 
 #step1: 開啟檔案
 filepath = args["file"]
 try:
     f = open_brd_file(filepath)
-    print(f"step1: file {filepath} open.")
+    print(f"step1: Open file. (File name: {filepath}) -DONE")
 except:
     print(f"File is not exit, check file name.")
+
 
 #step2: 解析檔案
 SQS = []
